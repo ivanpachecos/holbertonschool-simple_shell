@@ -8,62 +8,36 @@
 int main(/*int argc, char *argv[]*/ void)
 {
 	char *buffer = NULL;
-	size_t size_buff = 0;
-	size_t read_buff;
-
-	pid_t child_id;
-	int status;
-
-	char *token;
-	char **array;
-	int i;
-
-	size_t error_num = SIZE_MAX;
 
 	for (;;)
 	{
 		_prompt();
-		read_buff = getline(&buffer, &size_buff, stdin);
+		
+		buffer = _getline();
 
-		if (read_buff == error_num)
+		if (buffer == NULL)
 		{
-			perror("Exiting shell");
-			exit(1);
+			free(buffer);
+			break;
 		}
 
-		token = strtok(buffer, " \n");
-		array = malloc(sizeof(char *) * 1024);
-		i = 0;
-
-		while (token)
+		if (_strcmp(buffer, "exit\n") == 0)
 		{
-			array[i] = token;
-			token = strtok(NULL, " \n");
-			i++;
+			free(buffer);
+			return (0);
 		}
-
-		array[i] = NULL;
-
-		child_id = fork();
-		if (child_id == -1)
+		if (_strcmp(buffer, "env\n") == 0)
 		{
-			perror("Failed to create.");
-			exit(41);
+			print_environment();
+			continue;
 		}
+		if (buffer[0] == '\n')
+			continue;
 
-		if (child_id == 0)
-		{
-			if (execve(array[0], array, NULL) == -1)
-			{
-				perror("Failed to execute");
-				exit(97);
-			}
-		}
-		else
-		{
-			wait(&status);
-		}
+		buffer[custom_strcspn(buffer, "\n")] = '\0';
+
+		execute_command(buffer);
+		free(buffer);
 	}
-	free(buffer);
 	return (0);
 }
